@@ -1,0 +1,182 @@
+<!-- UNICODE CONVERTER - Simulation Project -->
+<!-- CSARCH2 S13 - Group 4 -->
+
+<!-- BALCUEVA, Joshua C. -->
+<!-- DELA CRUZ, Kyla Reese Jhulan P. -->
+<!-- HERNANDEZ, Tedrick James B. -->
+<!-- PINEDA, Gad Lyndon Y. -->
+
+<!DOCTYPE html>
+<html>
+	<head>
+	<style>
+		body{
+			background-color: beige;
+		}
+		
+		h1{
+			font-family: Tahoma;	
+			font-size: 50px;	
+			text-align: center;			
+		}
+
+		h2{
+			font-family: "Trebuchet MS";	
+			font-size: 18px;	
+			text-align: center;			
+		}
+
+     		label {
+        		font-family: "Trebuchet MS";
+			font-size: 18px;
+        		font-weight: 400;
+      	}
+      	input {
+        		width: 27%;
+        		height: 28px;
+        		padding: 4px 10px;
+        		font-size: 16px;
+        		font-family: "Trebuchet MS";
+      	}
+	</style>	
+
+		<title>Unicode Converter</title>
+		<script>
+		
+			// UTF-8 Manual Conversion
+			function toUTF8(codePoint) {
+				let bytes = [];
+				// Can it be represented with 1 byte?
+				if (codePoint <= 0x7F) {
+					bytes.push(codePoint);
+				// How about 2 bytes?
+				} else if (codePoint <= 0x7FF) {
+					// Byte 1: 110, then first 5 bits of the code point
+					bytes.push(0xC0 | (codePoint >> 6));
+					// Byte 2: 10, then last 6 bits of the code point
+					bytes.push(0x80 | (codePoint & 0x3F));
+				// 3 bytes?
+				} else if (codePoint <= 0xFFFF) {
+					// Byte 1: 1110, then first 4 bits of the code point
+					bytes.push(0xE0 | (codePoint >> 12));
+					// Byte 2: 10, then next 6 bits of the code point
+					bytes.push(0x80 | ((codePoint >> 6) & 0x3F));
+					// Byte 3: 10, then last 6 bits of the code point
+					bytes.push(0x80 | (codePoint & 0x3F));
+				// 4 bytes?
+				} else if (codePoint <= 0x10FFFF) {
+					// Byte 1: 11110, then first 3 bits of the code point
+					bytes.push(0xF0 | (codePoint >> 18));
+					// Byte 2: 10, then next 6 bits of the code point
+					bytes.push(0x80 | ((codePoint >> 12) & 0x3F));
+					// Byte 3: 10, then next 6 bits of the code point
+					bytes.push(0x80 | ((codePoint >> 6) & 0x3F));
+					// Byte 4: 10, then next 6 bits of the code point
+					bytes.push(0x80 | (codePoint & 0x3F));
+				}
+				return bytes;
+			}
+	 
+			// UTF-16 Manual Conversion
+			function toUTF16(codePoint) {
+				let words = [];
+				// Is it below or equal to FFFF?
+				if (codePoint <= 0xFFFF) {
+					words.push(codePoint);
+				// Okay, so we have to do the surrogate pair thing.
+				} else {
+					codePoint -= 0x10000; // Subtract 10000 first.
+					words.push(0xD800 | (codePoint >> 10)); // Add D800 to first surrogate.
+					words.push(0xDC00 | (codePoint & 0x3FF)); // Add DC00 to second surrogate.
+				}
+			return words;
+			}
+			
+			// No need for UTF-32 function! We just pad it with zeroes.
+
+			// Main Conversion Function for All UTFs
+			function convert() {
+				// We get the input, then we remove the 'U+' if it's there.
+				let input = document.getElementById("input").value;
+				input = input.replace(/^U\+/i, "");
+				
+				// We convert the input to a Unicode code point to make life more convenient.
+				let codePoint = parseInt(input, 16);
+				
+				// Is it valid? A.k.a. Is it not null, plus is it within range?
+				if (isNaN(codePoint) || codePoint < 0 || codePoint > 0x10FFFF) {
+					alert("Invalid Unicode code point!");
+					return;
+				}
+				
+				// Then, we implement the UTF functions and just display.
+				// We also make sure that each UTF tier has the right number of minimum bits (UTF-8: 2; UTF-16: 4; UTF-32: 8)
+				
+				// UTF-8
+				let utf8Bytes = toUTF8(codePoint);
+				let utf8String = utf8Bytes.map(b => b.toString(16).padStart(2, "0")).join(" "); // Thanks to Stack Overflow for this!
+				document.getElementById("output").value = utf8String;
+
+				// UTF-16
+				let utf16Words = toUTF16(codePoint);
+				let utf16String = utf16Words.map(w => w.toString(16).padStart(4, "0")).join("");
+				utf16String = utf16String.match(/.{1,2}/g).join(' '); // Thanks again, Stack Overflow!
+				document.getElementById("output16").value = utf16String;
+  
+				// UTF-32
+				let utf32String = codePoint.toString(16).padStart(8, "0");
+				utf32String = utf32String.match(/.{1,2}/g).join(' ');
+				document.getElementById("output32").value = utf32String;
+			}
+
+			// Copy to Notepad
+			function copyToClipboard() {
+				let output = "UTF-8: " + document.getElementById("output").value + "\n";
+				output += "UTF-16: " + document.getElementById("output16").value + "\n";
+				output += "UTF-32: " + document.getElementById("output32").value;
+				navigator.clipboard.writeText(output);
+			}
+
+		</script>
+	</head> 
+	<body>
+		<h1>Unicode Converter</h1>
+		
+		<!-- Input Section -->
+		<center>
+		<label for="input">Enter Unicode code point.You can include 'U+' or not!</label><br>
+		<input type="text" id="input"/><br>
+
+		<!-- Convert Button -->
+		<button onclick="convert()">Convert</button><br><br>
+		
+		<!-- UTF-8 Display Box -->
+		<label for="output">UTF-8:</label><br>
+		<textarea id="output" rows="4" cols="50"></textarea><br><br>
+		
+		<!-- UTF-16 Display Box -->
+		<label for="output16">UTF-16:</label><br>
+		<textarea id="output16" rows="4" cols="50"></textarea><br><br>
+		
+		<!-- UTF-32 Display Box -->
+		<label for="output32">UTF-32:</label><br>
+		<textarea id="output32" rows="4" cols="50"></textarea><br><br>
+		
+		<!-- Copy to Notepad Button -->
+		<button onclick="copyToClipboard()">Copy to clipboard</button><br><br>
+	
+		</center>
+
+		<h2>CSARCH2 S13 Group 4</h2>
+		<h2>BALCUEVA, Joshua C. | DELA CRUZ, Kyla Reese Jhulan P. | HERNANDEZ, Tedrick James B. | PINEDA, Gad Lyndon Y. </h2>	
+	</body>
+
+</html>
+
+<!-- REFERENCES -->
+
+<!-- 1. Canvas Slides & Presentations -->
+<!-- 2. https://stackoverflow.com/questions/58141438/utf-8-vs-utf-16-and-utf-32-conversion-confusion -->
+<!-- 3. https://www.unicode.org/faq/utf_bom.html -->
+<!-- 4. https://stackoverflow.com/questions/40031688/javascript-arraybuffer-to-hex -->
+<!-- 5. https://stackoverflow.com/questions/74447074/how-to-split-string-every-2-character -->
